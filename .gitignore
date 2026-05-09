@@ -216,3 +216,20 @@ __marimo__/
 
 # Streamlit
 .streamlit/secrets.toml
+
+# Игнорируем тяжелые бинарники и движки
+*.exe
+*.onnx
+*.json
+
+# Игнорируем сгенерированное аудио
+Готовые аудио/
+web/audio_cache/
+*.mp3
+*.wav
+*.mp4
+
+# Игнорируем сборки PyInstaller
+build/
+dist/
+*.spec
