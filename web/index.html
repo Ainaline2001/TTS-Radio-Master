@@ -1,0 +1,496 @@
+<!DOCTYPE html>
+<html lang="ru">
+<head>
+    <meta charset="UTF-8">
+    <title>Edge TTS Master Pro</title>
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;800&family=JetBrains+Mono&display=swap" rel="stylesheet">
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+    <script src="/eel.js"></script>
+    <style>
+        :root {
+            --bg: #09090b; --sidebar: #121214; --card: #18181b; --border: #27272a; --accent: #6366f1;
+            --success: #10b981; --danger: #ef4444; --text-main: #f3f4f6; --text-mude: #a1a1aa;
+            --radius: 12px; --font-main: 'Inter', sans-serif;
+        }
+
+        ::-webkit-scrollbar { width: 8px; }
+        ::-webkit-scrollbar-track { background: var(--bg); }
+        ::-webkit-scrollbar-thumb { background: var(--border); border-radius: 4px; }
+
+        * { box-sizing: border-box; margin: 0; padding: 0; }
+        body { background: var(--bg); color: var(--text-main); font-family: var(--font-main); display: flex; height: 100vh; overflow: hidden; }
+
+        /* SIDEBAR */
+        .sidebar { width: 260px; background: var(--sidebar); border-right: 1px solid var(--border); display: flex; flex-direction: column; padding: 20px; z-index: 10; }
+        .logo { font-size: 20px; font-weight: 800; margin-bottom: 40px; color: #fff; display: flex; align-items: center; gap: 10px; }
+        .logo i { color: var(--accent); }
+        .nav-btn { background: transparent; border: none; color: var(--text-mude); font-family: var(--font-main); font-size: 14px; font-weight: 600; text-align: left; padding: 12px 16px; border-radius: 8px; cursor: pointer; margin-bottom: 8px; transition: all 0.2s ease; display: flex; align-items: center; gap: 12px; }
+        .nav-btn i { font-size: 16px; width: 20px; text-align: center; }
+        .nav-btn:hover { background: var(--card); color: var(--text-main); transform: translateX(4px); }
+        .nav-btn.active { background: var(--accent); color: #fff; box-shadow: 0 4px 12px rgba(99, 102, 241, 0.3); }
+        
+        .mode-toggle { margin-top: auto; background: var(--card); border: 1px solid var(--border); border-radius: 8px; display: flex; padding: 4px; }
+        .mode-btn { flex: 1; border: none; background: transparent; color: var(--text-mude); padding: 8px; font-size: 12px; font-weight: 600; border-radius: 6px; cursor: pointer; transition: 0.2s; }
+        .mode-btn.active { background: var(--border); color: #fff; box-shadow: 0 2px 8px rgba(0,0,0,0.2); }
+
+        /* MAIN CONTENT */
+        .main-content { flex: 1; padding: 40px; overflow-y: auto; position: relative; }
+        .header-title { font-size: 28px; font-weight: 800; margin-bottom: 30px; letter-spacing: -0.5px; }
+        
+        .tab-content { display: none; }
+        .tab-content.active { display: block; animation: fadeIn 0.3s; }
+        @keyframes fadeIn { from { opacity: 0; transform: translateY(10px); } to { opacity: 1; transform: translateY(0); } }
+
+        .grid-2 { display: grid; grid-template-columns: 1fr 1fr; gap: 24px; }
+        .card { background: var(--card); border: 1px solid var(--border); border-radius: var(--radius); padding: 24px; box-shadow: 0 4px 20px rgba(0,0,0,0.2); }
+        .card-title { font-size: 12px; text-transform: uppercase; letter-spacing: 1px; color: var(--text-mude); font-weight: 800; margin-bottom: 20px; display: flex; align-items: center; gap: 8px; }
+
+        /* INPUTS & SELECTS */
+        .input-group { margin-bottom: 16px; }
+        label { display: block; font-size: 12px; color: var(--text-mude); margin-bottom: 8px; font-weight: 600; }
+        input[type="text"], input[type="number"], select, textarea { width: 100%; background: var(--bg); border: 1px solid var(--border); color: #fff; padding: 12px 14px; border-radius: 8px; font-family: var(--font-main); font-size: 13px; outline: none; }
+        select { cursor: pointer; }
+        optgroup { background: var(--bg); color: var(--text-mude); font-weight: bold; }
+        option { background: var(--card); color: var(--text-main); font-weight: normal; }
+
+        /* FILE UPLOAD */
+        .file-upload { display: flex; flex-direction: column; align-items: center; justify-content: center; padding: 24px; border: 2px dashed var(--border); border-radius: 8px; cursor: pointer; transition: all 0.2s ease; background: rgba(255,255,255,0.01); text-align: center; }
+        .file-upload:hover, .file-upload.dragover { border-color: var(--accent); background: rgba(99, 102, 241, 0.05); }
+        .file-upload i { font-size: 28px; color: var(--text-mude); margin-bottom: 12px; transition: 0.2s; }
+        .file-upload:hover i { color: var(--accent); transform: translateY(-3px); }
+        .file-upload span { font-size: 13px; color: var(--text-mude); font-weight: 500; word-break: break-all; }
+        
+        .yt-box { background: rgba(16, 185, 129, 0.03); border: 1px solid rgba(16, 185, 129, 0.15); border-radius: 8px; padding: 16px; margin-top: 20px; }
+        .fx-box { background: rgba(99, 102, 241, 0.05); border: 1px solid rgba(99, 102, 241, 0.2); border-radius: 8px; padding: 16px; margin-top: 20px; }
+
+        /* SLIDERS */
+        .slider-wrap { display: flex; align-items: center; justify-content: space-between; font-family: 'JetBrains Mono', monospace; font-size: 11px; color: var(--text-mude); margin-bottom: 8px; }
+        .slider-val { background: var(--bg); padding: 2px 6px; border-radius: 4px; border: 1px solid var(--border); color: var(--text-main); }
+        input[type="range"] { -webkit-appearance: none; width: 100%; height: 4px; background: var(--bg); border-radius: 2px; outline: none; margin-bottom: 20px; }
+        input[type="range"]::-webkit-slider-thumb { -webkit-appearance: none; width: 18px; height: 18px; background: #fff; border-radius: 50%; cursor: pointer; border: 4px solid var(--accent); transition: 0.2s; }
+
+        /* BUTTONS */
+        .btn { width: 100%; padding: 14px; border: none; border-radius: 8px; font-family: var(--font-main); font-size: 13px; font-weight: 800; text-transform: uppercase; letter-spacing: 0.5px; cursor: pointer; transition: all 0.2s; display: flex; justify-content: center; align-items: center; gap: 8px; }
+        .btn-primary { background: var(--accent); color: #fff; box-shadow: 0 4px 15px rgba(99, 102, 241, 0.2); }
+        .btn-primary:hover { background: #4f46e5; transform: translateY(-2px); }
+        .btn-success { background: var(--success); color: #fff; box-shadow: 0 4px 15px rgba(16, 185, 129, 0.2); }
+        .btn-success:hover { background: #059669; transform: translateY(-2px); }
+
+        /* TOAST NOTIFICATIONS */
+        .toast-container { position: fixed; top: 20px; right: 20px; z-index: 2000; display: flex; flex-direction: column; gap: 10px; }
+        .toast { background: var(--card); border-left: 4px solid var(--accent); color: #fff; padding: 16px 20px; border-radius: 8px; box-shadow: 0 10px 30px rgba(0,0,0,0.5); display: flex; align-items: center; gap: 12px; font-size: 13px; font-weight: 500; animation: slideInRight 0.3s cubic-bezier(0.16, 1, 0.3, 1); min-width: 250px; }
+        @keyframes slideInRight { from { transform: translateX(100%); opacity: 0; } to { transform: translateX(0); opacity: 1; } }
+
+        /* GLOBAL PROGRESS WIDGET */
+        .global-progress { position: fixed; bottom: 30px; left: 300px; right: 40px; background: rgba(24, 24, 27, 0.95); border: 1px solid var(--border); border-radius: 16px; padding: 20px 24px; box-shadow: 0 20px 40px rgba(0,0,0,0.6); display: none; z-index: 1000; align-items: center; gap: 24px; }
+        .global-progress.active { display: flex; animation: slideUp 0.4s cubic-bezier(0.16, 1, 0.3, 1); }
+        @keyframes slideUp { from { opacity: 0; transform: translateY(40px); } to { opacity: 1; transform: translateY(0); } }
+        
+        .prog-info { flex: 1; }
+        .prog-header { display: flex; justify-content: space-between; font-size: 13px; font-weight: 600; margin-bottom: 10px; }
+        .prog-task { color: var(--text-main); font-weight: 800; }
+        .prog-nums { font-family: 'JetBrains Mono', monospace; color: var(--text-mude); }
+        .prog-bar-bg { height: 8px; background: rgba(0,0,0,0.5); border-radius: 4px; overflow: hidden; }
+        .prog-bar-fill { height: 100%; background: linear-gradient(90deg, var(--accent), #818cf8); width: 0%; transition: width 0.3s ease; border-radius: 4px; }
+        .btn-stop { background: rgba(239, 68, 68, 0.1); color: var(--danger); border: 1px solid rgba(239, 68, 68, 0.2); padding: 12px 18px; border-radius: 8px; font-weight: 800; cursor: pointer; transition: 0.2s; }
+        .btn-stop:hover { background: var(--danger); color: #fff; }
+        
+        .activity-feed { margin-top: 15px; font-family: 'JetBrains Mono', monospace; font-size: 11px; display: flex; flex-direction: column-reverse; gap: 4px; }
+        .chunk-item { padding: 4px 8px; border-radius: 4px; background: rgba(255,255,255,0.05); color: var(--text-mude); display: flex; align-items: center; gap: 8px; animation: chunkIn 0.3s ease; }
+        @keyframes chunkIn { from { transform: translateX(-10px); opacity: 0; } to { transform: translateX(0); opacity: 1; } }
+        .chunk-item i { color: var(--success); font-size: 8px; }
+    </style>
+</head>
+<body>
+
+<div class="toast-container" id="toast-container"></div>
+
+<aside class="sidebar">
+    <div class="logo"><i class="fas fa-wave-square"></i> TTS Master</div>
+    <nav>
+        <button class="nav-btn active" onclick="openTab('books')"><i class="fas fa-book-open"></i> Аудиокниги</button>
+        <button class="nav-btn" onclick="openTab('dictionary')"><i class="fas fa-language"></i> Словари (CSV)</button>
+        <button class="nav-btn" onclick="openTab('phonetics')"><i class="fas fa-spell-check"></i> Произношение</button>
+    </nav>
+    <div class="mode-toggle">
+        <button class="mode-btn active" id="m-on" onclick="setMode('online')">ONLINE</button>
+        <button class="mode-btn" id="m-off" onclick="setMode('offline')">OFFLINE</button>
+    </div>
+</aside>
+
+<main class="main-content">
+    
+    <div id="books" class="tab-content active">
+        <h2 class="header-title">Синтез аудиокниг</h2>
+        <div class="grid-2">
+            <div>
+                <div class="card">
+                    <div class="card-title"><i class="fas fa-folder-open"></i> Исходные данные</div>
+                    <div class="input-group">
+                        <label class="file-upload" id="drop-b-file">
+                            <i class="fas fa-file-alt"></i>
+                            <span id="b-file-label">Нажмите или перетащите файл (EPUB/PDF)</span>
+                            <input type="file" id="b-file" accept=".epub,.pdf,.txt" hidden>
+                        </label>
+                    </div>
+                    <div class="input-group">
+                        <label>Имя проекта (Папки)</label>
+                        <input type="text" id="b-name" placeholder="Например: Основы БД">
+                    </div>
+                </div>
+
+                <div class="fx-box">
+                    <div class="card-title" style="color:var(--accent)"><i class="fas fa-music"></i> Аудио-эффекты</div>
+                    <div class="input-group">
+                        <label class="file-upload" id="drop-bgm-file" style="padding: 10px;">
+                            <i class="fas fa-headphones"></i>
+                            <span id="bgm-file-label">Загрузить фоновую музыку (MP3/WAV)</span>
+                            <input type="file" id="bgm-file" accept="audio/*" hidden>
+                        </label>
+                    </div>
+                    <div class="slider-wrap"><span>Громкость фона</span><span class="slider-val" id="bgm-val">10%</span></div>
+                    <input type="range" id="bgm-vol" min="1" max="100" value="10" oninput="document.getElementById('bgm-val').innerText=this.value+'%'; saveSettings()">
+                    
+                    <div class="input-group" style="margin-top: 15px;">
+                        <label>Аудио-маркеры предложений</label>
+                        <select id="fx-type" onchange="saveSettings()">
+                            <option value="none">Выключено ❌</option>
+                            <option value="apollo">🚀 Космос (Apollo Quindar)</option>
+                            <option value="zvei">🎵 Мелодия (ZVEI Selcall)</option>
+                            <option value="classic">📻 Классика (Ретро-сигнал)</option>
+                        </select>
+                    </div>
+                </div>
+
+                <div class="yt-box">
+                    <div class="card-title" style="color:var(--success)"><i class="fab fa-youtube"></i> YouTube Рендер</div>
+                    <div class="input-group">
+                        <label style="display:flex; align-items:center; gap:8px; cursor:pointer"><input type="checkbox" id="b-vid" style="width:auto"> Создавать MP4 видео</label>
+                    </div>
+                    <div class="input-group">
+                        <label class="file-upload" id="drop-c-file" style="padding: 12px;">
+                            <i class="fas fa-image"></i>
+                            <span id="c-file-label">Выбрать обложку</span>
+                            <input type="file" id="c-file" accept="image/*" hidden>
+                        </label>
+                    </div>
+                    <div class="input-group">
+                        <label>Аппаратный энкодер</label>
+                        <select id="v-enc" onchange="saveSettings()">
+                            <option value="cpu">💻 CPU</option>
+                            <option value="nvidia">🟢 NVIDIA</option>
+                            <option value="amd">🔴 AMD</option>
+                        </select>
+                    </div>
+                </div>
+            </div>
+
+            <div class="card" style="height: fit-content;">
+                <div class="card-title"><i class="fas fa-sliders-h"></i> Настройки голоса</div>
+                <div class="input-group">
+                    <label>Поиск голоса</label>
+                    <input type="text" id="v-search" placeholder="Начните вводить имя..." oninput="updateVoices()">
+                </div>
+                <div class="input-group">
+                    <label>Основной диктор</label>
+                    <select id="v-1" onchange="saveSettings()"></select>
+                </div>
+                <div class="input-group">
+                    <label>Голос диалогов (начинаются с "-")</label>
+                    <select id="v-2"><option value="">Выключено ❌</option></select>
+                </div>
+
+                <div style="margin-top: 25px;">
+                    <div class="slider-wrap"><span>Скорость речи</span><span class="slider-val" id="r-val">+0%</span></div>
+                    <input type="range" id="rate" min="-50" max="100" value="0" oninput="document.getElementById('r-val').innerText=(this.value>=0?'+':'')+this.value+'%'; saveSettings()">
+
+                    <div class="slider-wrap"><span>Тон (Pitch)</span><span class="slider-val" id="p-val">+0Hz</span></div>
+                    <input type="range" id="pitch" min="-50" max="50" value="0" oninput="document.getElementById('p-val').innerText=(this.value>=0?'+':'')+this.value+'Hz'; saveSettings()">
+
+                    <div class="slider-wrap"><span style="color: var(--accent);">Громкость голоса</span><span class="slider-val" id="vv-val">+0%</span></div>
+                    <input type="range" id="voice-vol" min="-50" max="100" value="0" oninput="document.getElementById('vv-val').innerText=(this.value>=0?'+':'')+this.value+'%'; saveSettings()">
+
+                    <div class="slider-wrap"><span>Многопоточность</span><span class="slider-val" id="w-val">4</span></div>
+                    <input type="range" id="workers" min="1" max="100" value="4" oninput="document.getElementById('w-val').innerText=this.value; saveSettings()">
+                </div>
+
+                <button class="btn btn-primary" style="margin-top: 25px;" id="btn-start-book" onclick="startSynth()">
+                    <i class="fas fa-play"></i> Запустить синтез
+                </button>
+            </div>
+        </div>
+    </div>
+
+    <div id="dictionary" class="tab-content">
+        <h2 class="header-title">Аудиословари</h2>
+        <div class="grid-2">
+            <div class="card">
+                <div class="card-title"><i class="fas fa-table"></i> Данные</div>
+                <div class="input-group">
+                    <label class="file-upload" id="drop-d-file">
+                        <i class="fas fa-file-excel"></i>
+                        <span id="d-file-label">Загрузить таблицу</span>
+                        <input type="file" id="d-file" accept=".xlsx,.csv" hidden>
+                    </label>
+                </div>
+                <div class="input-group">
+                    <label>Имя словаря</label>
+                    <input type="text" id="d-name" placeholder="Например: Термины SQL">
+                </div>
+                <div class="input-group">
+                    <label>Пауза между словами (мс)</label>
+                    <input type="number" id="d-delay" value="1000">
+                </div>
+            </div>
+            
+            <div class="card">
+                <div class="card-title"><i class="fas fa-language"></i> Настройка языков</div>
+                <div class="input-group">
+                    <label>Голос 1 (Слова из колонки А)</label>
+                    <select id="vd-1"></select>
+                </div>
+                <div class="input-group">
+                    <label>Голос 2 (Слова из колонки B)</label>
+                    <select id="vd-2"></select>
+                </div>
+                <button class="btn btn-success" style="margin-top: 30px;" id="btn-start-dict" onclick="startDict()">
+                    <i class="fas fa-magic"></i> Создать аудиословарь
+                </button>
+            </div>
+        </div>
+    </div>
+
+    <div id="phonetics" class="tab-content">
+        <h2 class="header-title">Проверка произношения</h2>
+        <div class="card">
+            <div class="input-group">
+                <textarea id="t-text" rows="5" placeholder="Введите сложный текст или имена..."></textarea>
+            </div>
+            <button class="btn btn-primary" onclick="runTest()">
+                <i class="fas fa-volume-up"></i> Тестировать
+            </button>
+            <audio id="t-player" controls style="display:none; width:100%; margin-top:20px; border-radius: 8px;"></audio>
+        </div>
+    </div>
+
+</main>
+
+<div class="global-progress" id="global-progress">
+    <div class="prog-info">
+        <div class="prog-header">
+            <span class="prog-task" id="p-ch">Инициализация...</span>
+            <span class="prog-nums" id="p-info">0 / 0</span>
+        </div>
+        <div class="prog-bar-bg"><div class="prog-bar-fill" id="p-bar"></div></div>
+        <div class="activity-feed" id="activity-feed"></div>
+    </div>
+    <button class="btn-stop" onclick="eel.stop_process()" title="Прервать"><i class="fas fa-stop"></i></button>
+</div>
+
+<script>
+    let voices = [], offVoices = [], currentMode = "online", bFile = "", bName = "", dFile = "", cFile = "", bgmFile = "", lastDone = 0;
+
+    function showToast(message, type = 'info') {
+        const container = document.getElementById('toast-container');
+        const toast = document.createElement('div');
+        toast.className = 'toast';
+        toast.style.borderLeftColor = type === 'success' ? 'var(--success)' : (type === 'error' ? 'var(--danger)' : 'var(--accent)');
+        let icon = type === 'success' ? 'fa-check-circle' : (type === 'error' ? 'fa-exclamation-circle' : 'fa-info-circle');
+        toast.innerHTML = `<i class="fas ${icon}"></i> <span>${message}</span>`;
+        container.appendChild(toast);
+        setTimeout(() => { toast.style.animation = 'fadeOut 0.3s forwards'; setTimeout(() => toast.remove(), 300); }, 3000);
+    }
+
+    function saveSettings() {
+        localStorage.setItem('tts_rate', document.getElementById('rate').value);
+        localStorage.setItem('tts_pitch', document.getElementById('pitch').value);
+        localStorage.setItem('tts_voice_vol', document.getElementById('voice-vol').value);
+        localStorage.setItem('tts_workers', document.getElementById('workers').value);
+        localStorage.setItem('tts_enc', document.getElementById('v-enc').value);
+        localStorage.setItem('tts_voice', document.getElementById('v-1').value);
+        localStorage.setItem('tts_bgm_vol', document.getElementById('bgm-vol').value);
+        localStorage.setItem('tts_fx', document.getElementById('fx-type').value);
+    }
+
+    function loadSettings() {
+        if(localStorage.getItem('tts_rate')) { document.getElementById('rate').value = localStorage.getItem('tts_rate'); document.getElementById('r-val').innerText = (localStorage.getItem('tts_rate') >= 0 ? '+' : '') + localStorage.getItem('tts_rate') + '%'; }
+        if(localStorage.getItem('tts_pitch')) { document.getElementById('pitch').value = localStorage.getItem('tts_pitch'); document.getElementById('p-val').innerText = (localStorage.getItem('tts_pitch') >= 0 ? '+' : '') + localStorage.getItem('tts_pitch') + 'Hz'; }
+        if(localStorage.getItem('tts_voice_vol')) { document.getElementById('voice-vol').value = localStorage.getItem('tts_voice_vol'); document.getElementById('vv-val').innerText = (localStorage.getItem('tts_voice_vol') >= 0 ? '+' : '') + localStorage.getItem('tts_voice_vol') + '%'; }
+        if(localStorage.getItem('tts_workers')) { document.getElementById('workers').value = localStorage.getItem('tts_workers'); document.getElementById('w-val').innerText = localStorage.getItem('tts_workers'); }
+        if(localStorage.getItem('tts_enc')) document.getElementById('v-enc').value = localStorage.getItem('tts_enc');
+        if(localStorage.getItem('tts_bgm_vol')) { document.getElementById('bgm-vol').value = localStorage.getItem('tts_bgm_vol'); document.getElementById('bgm-val').innerText = localStorage.getItem('tts_bgm_vol') + '%'; }
+        if(localStorage.getItem('tts_fx')) document.getElementById('fx-type').value = localStorage.getItem('tts_fx');
+    }
+
+    async function init() {
+        voices = await eel.get_voices()();
+        offVoices = await eel.get_offline_voices()();
+        updateVoices();
+        loadSettings();
+        if(localStorage.getItem('tts_voice')) setTimeout(() => { document.getElementById('v-1').value = localStorage.getItem('tts_voice'); }, 100);
+    }
+
+    function setupFileUploader(dropZoneId, inputId, labelId, storeVarSetter, defaultText) {
+        const dropZone = document.getElementById(dropZoneId);
+        const input = document.getElementById(inputId);
+        const label = document.getElementById(labelId);
+
+        function handleFiles(files) {
+            if (files.length > 0) {
+                const file = files[0];
+                const r = new FileReader();
+                r.onload = async () => {
+                    storeVarSetter(r.result, file.name);
+                    if(inputId === 'b-file') {
+                        showToast("Считаю главы в книге...", "info");
+                        const info = await eel.get_book_info(file.name, r.result)();
+                        label.innerText = `${file.name} (Глав: ${info.count})`;
+                        document.getElementById('b-name').value = file.name.split('.')[0];
+                    } else if (inputId === 'bgm-file') {
+                        label.innerText = file.name;
+                        showToast("Музыка загружена", "success");
+                    } else {
+                        label.innerText = file.name;
+                    }
+                    label.style.color = '#fff';
+                };
+                r.readAsDataURL(file);
+            }
+        }
+        input.addEventListener('change', function() { handleFiles(this.files); });
+        ['dragenter', 'dragover', 'dragleave', 'drop'].forEach(eventName => dropZone.addEventListener(eventName, e => { e.preventDefault(); e.stopPropagation(); }, false));
+        ['dragenter', 'dragover'].forEach(eventName => dropZone.addEventListener(eventName, () => dropZone.classList.add('dragover'), false));
+        ['dragleave', 'drop'].forEach(eventName => dropZone.addEventListener(eventName, () => dropZone.classList.remove('dragover'), false));
+        dropZone.addEventListener('drop', e => handleFiles(e.dataTransfer.files), false);
+    }
+
+    setupFileUploader('drop-b-file', 'b-file', 'b-file-label', (b64, name) => { bFile = b64; bName = name; });
+    setupFileUploader('drop-c-file', 'c-file', 'c-file-label', (b64, name) => { cFile = b64; showToast("Обложка загружена", "success"); });
+    setupFileUploader('drop-d-file', 'd-file', 'd-file-label', (b64, name) => { dFile = b64; document.getElementById('d-name').value = name.split('.')[0]; });
+    setupFileUploader('drop-bgm-file', 'bgm-file', 'bgm-file-label', (b64, name) => { bgmFile = b64; });
+
+    function openTab(name) {
+        document.querySelectorAll('.tab-content').forEach(t => t.classList.remove('active'));
+        document.querySelectorAll('.nav-btn').forEach(b => b.classList.remove('active'));
+        document.getElementById(name).classList.add('active');
+        event.currentTarget.classList.add('active');
+    }
+
+    function setMode(m) {
+        currentMode = m;
+        document.getElementById('m-on').classList.toggle('active', m === 'online');
+        document.getElementById('m-off').classList.toggle('active', m === 'offline');
+        updateVoices();
+    }
+
+    function updateVoices() {
+        const search = (document.getElementById('v-search') ? document.getElementById('v-search').value.toLowerCase() : "");
+        const list = currentMode === 'online' ? voices : offVoices;
+        const ussrLocales = ['ru', 'kk', 'uk', 'be', 'uz', 'az', 'ka', 'hy', 'ky', 'tg'];
+
+        let groups = { 'СНГ и Языки СССР': [], 'Остальные (Мировые)': [] };
+
+        list.filter(v => v.name.toLowerCase().includes(search)).forEach(v => {
+            let loc = v.locale ? v.locale.split('-')[0].toLowerCase() : '';
+            if (ussrLocales.includes(loc)) groups['СНГ и Языки СССР'].push(v);
+            else groups['Остальные (Мировые)'].push(v);
+        });
+
+        ['v-1', 'v-2', 'vd-1', 'vd-2'].forEach(id => {
+            const s = document.getElementById(id);
+            const val = s.value;
+            s.innerHTML = id === 'v-2' ? '<option value="">Выключено ❌</option>' : '';
+            for (const [gName, gVoices] of Object.entries(groups)) {
+                if (gVoices.length === 0) continue;
+                let optgroup = document.createElement('optgroup'); optgroup.label = gName;
+                gVoices.forEach(v => {
+                    let o = document.createElement('option'); o.value = v.name; o.text = v.name.replace('Neural', '').replace('Microsoft', '').trim(); 
+                    optgroup.appendChild(o);
+                });
+                s.appendChild(optgroup);
+            }
+            if(val && [...s.options].some(opt => opt.value === val)) s.value = val;
+        });
+    }
+
+    function addChunkToFeed() {
+        const feed = document.getElementById('activity-feed');
+        const item = document.createElement('div');
+        item.className = 'chunk-item';
+        item.innerHTML = `<i class="fas fa-circle"></i> Синтезирован фрагмент текста... [OK]`;
+        feed.appendChild(item);
+        if(feed.childNodes.length > 3) feed.removeChild(feed.firstChild);
+    }
+
+    function startSynth() {
+        if(!bFile) return showToast("Загрузите файл книги!", "error");
+        document.getElementById('global-progress').classList.add('active');
+        saveSettings();
+        
+        const rate = (document.getElementById('rate').value >= 0 ? '+' : '') + document.getElementById('rate').value + '%';
+        const pitch = (document.getElementById('pitch').value >= 0 ? '+' : '') + document.getElementById('pitch').value + 'Hz';
+        const voiceVol = (document.getElementById('voice-vol').value >= 0 ? '+' : '') + document.getElementById('voice-vol').value + '%';
+        const bgmVol = document.getElementById('bgm-vol').value;
+        const fxType = document.getElementById('fx-type').value;
+        
+        showToast("Синтез аудиокниги запущен", "info");
+        eel.synthesize_epub(bName, bFile, document.getElementById('v-1').value, document.getElementById('v-2').value, rate, voiceVol, pitch, document.getElementById('workers').value, document.getElementById('b-name').value, currentMode, document.getElementById('b-vid').checked, cFile, document.getElementById('v-enc').value, bgmFile, bgmVol, fxType);
+        
+        lastDone = 0;
+        let timer = setInterval(async () => {
+            const pr = await eel.get_progress()();
+            document.getElementById('p-bar').style.width = pr.pct + '%';
+            document.getElementById('p-ch').innerText = pr.chapter;
+            document.getElementById('p-info').innerText = `${Math.floor(pr.done)} / ${pr.total}`;
+            
+            if(Math.floor(pr.done) > lastDone) { addChunkToFeed(); lastDone = Math.floor(pr.done); }
+
+            if(pr.status === 'done' || pr.status === 'error' || pr.status === 'stopped') {
+                clearInterval(timer);
+                if(pr.status === 'done') showToast("Процесс успешно завершен!", "success");
+                else if(pr.status === 'error') showToast("Произошла ошибка обработки", "error");
+                setTimeout(() => document.getElementById('global-progress').classList.remove('active'), 3000);
+            }
+        }, 1000);
+    }
+
+    function startDict() {
+        if(!dFile) return showToast("Загрузите CSV/Excel таблицу!", "error");
+        document.getElementById('global-progress').classList.add('active');
+        const voiceVol = (document.getElementById('voice-vol').value >= 0 ? '+' : '') + document.getElementById('voice-vol').value + '%';
+        showToast("Генерация аудиословаря запущена", "info");
+        eel.process_dictionary(dFile, "dict.xlsx", document.getElementById('vd-1').value, document.getElementById('vd-2').value, document.getElementById('d-name').value, document.getElementById('d-delay').value, currentMode, voiceVol);
+        
+        let timer = setInterval(async () => {
+            const pr = await eel.get_progress()();
+            document.getElementById('p-bar').style.width = pr.pct + '%';
+            document.getElementById('p-ch').innerText = pr.chapter;
+            document.getElementById('p-info').innerText = `${Math.floor(pr.done)} / ${pr.total}`;
+            if(pr.status === 'done' || pr.status === 'error' || pr.status === 'stopped') {
+                clearInterval(timer);
+                if(pr.status === 'done') showToast("Словарь создан!", "success");
+                setTimeout(() => document.getElementById('global-progress').classList.remove('active'), 3000);
+            }
+        }, 1000);
+    }
+
+    async function runTest() {
+        const text = document.getElementById('t-text').value; 
+        if(!text) return showToast("Введите текст", "error");
+        
+        const rate = (document.getElementById('rate').value >= 0 ? '+' : '') + document.getElementById('rate').value + '%';
+        const pitch = (document.getElementById('pitch').value >= 0 ? '+' : '') + document.getElementById('pitch').value + 'Hz';
+        const voiceVol = (document.getElementById('voice-vol').value >= 0 ? '+' : '') + document.getElementById('voice-vol').value + '%';
+        
+        const url = await eel.test_synthesis(text, document.getElementById('v-1').value, rate, voiceVol, pitch, currentMode)();
+        
+        const pl = document.getElementById('t-player'); 
+        pl.src = url + "?t=" + Date.now(); 
+        pl.style.display = 'block'; 
+        pl.play();
+    }
+
+    init();
+</script>
+</body>
+</html>
